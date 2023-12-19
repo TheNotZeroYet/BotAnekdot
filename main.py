@@ -3,12 +3,18 @@ from aiogram import Dispatcher
 from aiogram import executor
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
 import requests
+from dotenv import load_dotenv
 
+from pathlib import Path
+import os
 from random import randint
 
 from db import Database
 
-TOKEN = "6415358389:AAGaNRZsKJEDufAngFjNHiZUP9kaW8krU0A"
+dotenv_path = Path('.env')
+load_dotenv(dotenv_path=dotenv_path)
+
+TOKEN = os.getenv('TOKEN')
 
 
 # FUNCTION
