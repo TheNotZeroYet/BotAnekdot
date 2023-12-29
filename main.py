@@ -32,10 +32,14 @@ rand_joke_btn = KeyboardButton('Рандомный Анекдот')
 rand_passw_btn = KeyboardButton('Рандомный Пароль')
 top_jokes_btn = KeyboardButton('Избранные Анекдоты')
 top_password_btn = KeyboardButton('Сохраенные Пароли')
+like_btn = KeyboardButton('В Избранное')
+skip_btn = KeyboardButton('Пропустить')
 
 # KEYBOARDS
 menu_kb = ReplyKeyboardMarkup(resize_keyboard=True)
 menu_kb.add(rand_joke_btn, rand_passw_btn, top_jokes_btn, top_password_btn)
+joke_item_kb = ReplyKeyboardMarkup(resize_keyboard=True)
+joke_item_kb.add(like_btn, skip_btn)
 
 db_client = Database("table.db")
 bot = Bot(token=TOKEN)
@@ -47,24 +51,32 @@ dp = Dispatcher(bot)
 async def start_(message: types.Message):
     user_id = message.from_user.id
     username = message.from_user.username
-    db_client.add_user(user_id, username)
+    db_client.add_user(user_id, username, "start")
     await message.reply(
-        f"Сборник анекдотов со всей наблюдаем человечеством вселенной, \nтакже из других вселенных, еще есть сборник лучших анекдотов из КВН (нет)",
+        f"Сборник анекдотов со всей наблюдаемой человечеством вселенной, \nтакже из других вселенных, еще есть сборник лучших анекдотов из КВН (нет)",
         reply_markup=menu_kb)
 
 
 @dp.message_handler()
-async def get_rand_password(message: types.Message):
+async def main_func(message: types.Message):
     user_id = str(message.from_user.id)
-    if message.text == 'Рандомный Пароль':
+    if message.text == 'Рандомный Пароль' and db_client.get_state_user(int(user_id)) == "start":
         password = "".join(rand_password())
-        db_client.add_password(password)
+        db_client.add_password(password, int(user_id))
+        db_client.set_state_user(int(user_id), 'password_menu')
         await message.reply(password)
-    elif message.text == 'Рандомный Анекдот':
+    elif message.text == 'Рандомный Анекдот' and db_client.get_state_user(int(user_id)) == "start":
         joke = rand_joke()
-        db_client.add_joke(joke)
-        await message.reply(joke)
-
+        db_client.add_joke(joke, int(user_id))
+        db_client.set_state_user(int(user_id), 'joke_menu')
+        await message.reply(joke, reply_markup=joke_item_kb)
+    elif message.text == 'Пропустить' and db_client.get_state_user(int(user_id)) == "joke_menu":
+        db_client.set_state_user(int(user_id), 'start')
+        await message.reply('Вы успешно вернулись домой', reply_markup=menu_kb)
+    elif message.text == 'В Избранное' and db_client.get_state_user(int(user_id)) == "joke_menu":
+        db_client.add_id_joke_to_ids(int(user_id), db_client.get_last_joke_id())
+        db_client.set_state_user(int(user_id), 'start')
+        await message.reply('Вы успешно добавили шутку в избранное', reply_markup=menu_kb)
 
 if __name__ == '__main__':
     executor.start_polling(dp)
