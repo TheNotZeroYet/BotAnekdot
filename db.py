@@ -69,8 +69,8 @@ class Database:
         self.cursor.execute(insert_query, user_data)
         self.conn.commit()
 
-    def get_last_joke_id(self):
-        sql = f"SELECT id FROM jokes"
+    def get_last_joke_id(self, tg_id):
+        sql = f"SELECT id FROM jokes WHERE user_create_id={tg_id}"
         self.cursor.execute(sql)
         result = self.cursor.fetchall()
         return result[-1][0]
@@ -89,3 +89,36 @@ class Database:
             ids_jokes = self.get_joke_ids_by_user(tg_id)
             self.cursor.execute(sql, (f"{ids_jokes},{joke_id}", tg_id))
         self.conn.commit()
+
+    def get_last_password_id(self, tg_id):
+        sql = f"SELECT id FROM passwords WHERE user_create_id={tg_id}"
+        self.cursor.execute(sql)
+        result = self.cursor.fetchall()
+        return result[-1][0]
+
+    def get_password_ids_by_user(self, tg_id):
+        sql = f"SELECT password_ids FROM users WHERE tg_id={tg_id}"
+        self.cursor.execute(sql)
+        result = self.cursor.fetchone()
+        return result[0]
+
+    def add_id_password_to_ids(self, tg_id, password_id):
+        sql = '''UPDATE users SET password_ids = ? WHERE tg_id = ?'''
+        if self.get_password_ids_by_user(tg_id) is None:
+            self.cursor.execute(sql, (f"{password_id}", tg_id))
+        else:
+            ids_password = self.get_password_ids_by_user(tg_id)
+            self.cursor.execute(sql, (f"{ids_password},{password_id}", tg_id))
+        self.conn.commit()
+
+    def get_joke_by_id(self, joke_id):
+        sql = f"SELECT joke FROM jokes WHERE id={joke_id}"
+        self.cursor.execute(sql)
+        result = self.cursor.fetchone()
+        return result[0]
+
+    def get_password_by_id(self, password_id):
+        sql = f"SELECT password FROM passwords WHERE id={password_id}"
+        self.cursor.execute(sql)
+        result = self.cursor.fetchone()
+        return result[0]
